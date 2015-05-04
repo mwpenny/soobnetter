@@ -5,6 +5,11 @@ DIR_BIN = bin
 VPATH = $(DIR_SRC)/
 FLAGS = -Wall -pedantic
 
+all: dirs soobnetter
+
+dirs:
+	mkdir -p $(DIR_OBJ)/ $(DIR_BIN)/
+
 soobnetter:	main.o splash.o address.o network.o prompt.o io.o
 	gcc $(FLAGS) -o $(DIR_BIN)/soobneter $(DIR_OBJ)/* -lm
 
@@ -27,4 +32,4 @@ io.o:	io.c io.h network.h prompt.h
 	gcc $(FLAGS) -c -o $(DIR_OBJ)/io.o $(DIR_SRC)/io.c
 
 clean:
-	rm -f $(DIR_OBJ)/*.o $(DIR_BIN)/soobnetter
+	rm -rf $(DIR_OBJ)/ $(DIR_BIN)/
