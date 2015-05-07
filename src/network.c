@@ -25,7 +25,8 @@ int netmask_valid(Network* netw, Address* mask)
 	int classBits = addr_classbits(addrclass(&netw->addr));
 	unsigned long minMask = ~(((1<<(ADDR_BITS-classBits))-1));
 
-	return (*mask > minMask-1 && *mask < (Address)~((1<<2)-1)+1 &&
+	/* 3 = 00000011 */
+	return (*mask > minMask-1 && *mask < (Address)~(3)+1 &&
 		    !(~*mask & ((~*mask)+1))); /* Valid masks are all 1s followed by all 0s */
 }
 
@@ -129,12 +130,12 @@ int netw_subcount_bits(int subcount, char class)
 {
 	/* Borrowed bits + network bits for the class.
 	   Number of bits needed to accommodate subcount subnets */
-	return ceil((log((double)subcount)/log(2.))) + 
+	return (int)ceil((log((double)subcount)/log(2.))) + 
 		   addr_classbits(class);
 }
 
 int netw_hostcount_bits(int hostcount)
 {
 	/* Number of bits needed to accommodate hostcount hosts */
-	return ADDR_BITS - ceil((log(hostcount+2.)/log(2.)));
+	return ADDR_BITS - (int)ceil((log(hostcount+2.)/log(2.)));
 }

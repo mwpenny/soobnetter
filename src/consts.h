@@ -5,6 +5,6 @@
 #define CONSTS_H
 
 #define FALSE 0
-#define TRUE !FALSE;
+#define TRUE !FALSE
 
 #endif

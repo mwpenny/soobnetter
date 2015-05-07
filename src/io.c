@@ -3,13 +3,13 @@
 
 #include "io.h"
 
-void io_get_netw(Network* netw, Network* subnet)
+void io_get_netw(Network* netw)
 {
 	char choice;
-	subnet->nBits = 0;
+	netw->nBits = 0;
 
-	prompt("Enter address: ", parse_slaship, NULL, &subnet->addr);
-	if (!subnet->nBits) /* don't prompt for mask/bits if network bits are known */
+	prompt("Enter address: ", parse_slaship, NULL, &netw->addr);
+	if (!netw->nBits) /* don't prompt for mask/bits if network bits are known */
 	{
 		/* Prompt/calculate for mask from subnet or host count */
 		prompt("Find mask automagically? [y/n]", parse_choice, "yn", &choice);
@@ -20,19 +20,17 @@ void io_get_netw(Network* netw, Network* subnet)
 			
 			if (choice == 's')
 				prompt("Enter required number of soobnets: ",
-					   parse_max_subnum, subnet, &subnet->nBits);
+					   parse_max_subnum, netw, &netw->nBits);
 			else
 				prompt("Enter required number of hosts/soobnet: ",
-					   parse_max_hostnum, subnet, &subnet->nBits);
+					   parse_max_hostnum, netw, &netw->nBits);
 		}
 
 		/* Fallback: have the user enter the mask or number of bits borrowed */
 		else prompt("Enter borrowed bits or soobnet mask: ", parse_bitsm,
-				    subnet, &subnet->nBits);
+				    netw, &netw->nBits);
 	}
-
-	addr_to_netaddr(&subnet->addr, &netw->addr);
-	netw->nBits = subnet->nBits;
+	puts("");
 }
 
 int io_get_subnetting()
@@ -61,6 +59,141 @@ void io_get_subnet_range(Network* netw, int* firstSub, int* lastSub)
 	puts("");
 }
 
+int io_apply_arg(Argument* arg, Network* netw, char* err)
+{
+	Network n; /* For when the network address needs to be calculated */
+	int firstSub, lastSub;
+	strcpy(err, "");
+
+	/* Handle arguments */
+
+	/* IPv4 address */
+	if (!strcmp(arg->method, "a"))
+	{
+		if (arg_check_argc(arg, 1, err))
+			parse_slaship(arg->argv[0], err, NULL, netw);
+	}
+
+	/* Subnet mask / bits borrowed */
+	else if (!strcmp(arg->method, "m") || !strcmp(arg->method, "b"))
+	{
+		if (arg_check_argc(arg, 1, err))
+		{
+			if (!netw->addr)
+				strcpy(err, "Address must be specified before network bits. ");
+			else if (netw->nBits)
+				strcpy(err, "Network bits specified multiple times. ");
+			else parse_bitsm(arg->argv[0], err, netw, &netw->nBits);
+		}
+	}
+
+	/* Subnet count */
+	else if (!strcmp(arg->method, "sc"))
+	{
+		if (arg_check_argc(arg, 1, err))
+		{
+			if (!netw->addr)
+				strcpy(err, "Address must be specified before soobnet count. ");
+			else if (netw->nBits)
+				strcpy(err, "Network bits specified multiple times. ");
+			else parse_max_subnum(arg->argv[0], err, netw, &netw->nBits);
+		}
+	}
+
+	/* Host count */
+	else if (!strcmp(arg->method, "hc"))
+	{
+		if (arg_check_argc(arg, 1, err))
+		{
+			if (!netw->addr)
+				strcpy(err, "Address must be specified before host count. ");
+			else if (netw->nBits)
+				strcpy(err, "Network bits specified multiple times. ");
+			else parse_max_hostnum(arg->argv[0], err, netw, &netw->nBits);
+		}
+	}
+
+	/* View specific subnet */
+	else if (!strcmp(arg->method, "vs"))
+	{
+		if (arg_check_argc(arg, 1, err))
+		{
+			if (!netw->addr)
+				strcpy(err, "Address must be specified before viewing a soobnet. ");
+			else if (!netw->nBits)
+				strcpy(err, "Network bits must be specified before viewing a soobnet. ");
+			else
+			{
+				addr_to_netaddr(&netw->addr, &n.addr);
+				n.nBits = netw->nBits;
+				parse_subnum(arg->argv[0], err, &n, &firstSub);
+				io_print_subnets(&n, firstSub, firstSub);
+			}
+		}
+	}
+
+	/* View subnet range */
+	else if (!strcmp(arg->method, "vr"))
+	{
+		if (arg_check_argc(arg, 2, err))
+		{
+			if (!netw->addr)
+				strcpy(err, "Address must be specified before viewing soobnets. ");
+			else if (!netw->nBits)
+				strcpy(err, "Network bits must be specified before viewing soobnets. ");
+			else
+			{
+				addr_to_netaddr(&netw->addr, &n.addr);
+				n.nBits = netw->nBits;
+				parse_subnum(arg->argv[0], err, &n, &firstSub);
+				parse_subnum(arg->argv[1], err, &n, &lastSub);
+				io_print_subnets(&n, firstSub, lastSub);
+			}
+		}
+	}
+
+	/* Network summary */
+	else if (!strcmp(arg->method, "s"))
+	{
+		if (arg_check_argc(arg, 0, err))
+		{
+			if (!netw->addr)
+				strcpy(err, "Address must be specified before viewing a summary. ");
+			else if (!netw->nBits)
+				strcpy(err, "Network bits must be specified before viewing a summary. ");
+			else
+			{
+				addr_to_netaddr(&netw->addr, &n.addr);
+				n.nBits = netw->nBits;
+				io_print_netw(&n, netw);
+			}
+		}
+	}
+	else
+		sprintf(err, "Invalid arugment '%s'. ", arg->method);
+
+	return !strlen(err); /* Was there no error? */
+}
+
+void io_print_syntax()
+{
+	/* Prints the usage and syntax */
+	puts("Soobnets a network and calculates useful network information\n\nUsage:");
+	puts("Soobneter -a ADDRESS [-m MASK | -b BITS_BORROWED | -sc SOOBNET_COUNT"
+		 "| -hc HOST_COUNT] [-s] [-vs SOOBNET_NUM | -vr LOWER_BOUND UPPER_BOUND] [-q] [-? | --help]\n");
+
+	printf("%-29sSets host address in dotted decimal or slash form.\n", "-a  ADDRESS");
+	printf("%-29sSets the soobnet mask.\n", "-m  MASK");
+	printf("%-29sSets the number of bits borrowed.\n", "-b  BITS_BORROWED");
+	printf("%-29sSets the number of usable soobnets required.\n", "-sc SOOBNET_COUNT");
+	printf("%-29sSets the number of usable hosts/soobnet required.\n", "-hc HOST_COUNT");
+	printf("%-29sDisplays a network summary.\n", "-s");
+	printf("%-29sSpecifies the number of the soobnet to display.\n", "-vs SOOBNET_NUM");
+	printf("%-29sSpecifies the soobnet range to display, inclusive.\n", "-vr LOWER_BOUND UPPER_BOUND");
+	printf("%-29sDisables interactive soobnet viewing.\n", "-q");
+	printf("%-29sDisplays this help screen.\n", "-? --help");
+}
+
 void io_print_netw(Network* netw, Network* subnet)
 {
 	char buf[512], addrStr[ADDR_STRLEN];
@@ -70,7 +203,7 @@ void io_print_netw(Network* netw, Network* subnet)
 	/* Print network summary */
 	addr_str(&subnet->addr, addrStr);
 	netsummary_str(netw, buf);	
-	printf("\nAddress: %s/%d\n\n%s\n\n\n", addrStr,
+	printf("Address: %s/%d\n\n%s\n\n\n", addrStr,
 		subnet->nBits, buf);
 
 	/* Print information about the subnet the user-entered address is on */
