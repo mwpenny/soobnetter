@@ -23,7 +23,7 @@ void netmask(Network* net, Address* mask)
 int netmask_valid(Network* netw, Address* mask)
 {
 	int classBits = addr_classbits(addrclass(&netw->addr));
-	unsigned long minMask = ~(((1<<(ADDR_BITS-classBits))-1));
+	Address minMask = ~(((1<<(ADDR_BITS-classBits))-1));
 
 	/* 3 = 00000011 */
 	return (*mask > minMask-1 && *mask < (Address)~(3)+1 &&
@@ -88,7 +88,7 @@ void netw_subnet(Network* netw, int subnum, Network* subnet)
 int netw_subnum(Network* subnet)
 {
 	int borrowed = netw_bits_borrowed(subnet);
-	unsigned long subNumMask = ((1<<borrowed)-1) << (ADDR_BITS-subnet->nBits);
+	Address subNumMask = ((1<<borrowed)-1) << (ADDR_BITS-subnet->nBits);
 
 	/* Isolate the borrowed bits of the address */
 	return (subnet->addr & subNumMask) >> (ADDR_BITS-subnet->nBits);
