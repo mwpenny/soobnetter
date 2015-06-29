@@ -11,7 +11,7 @@ dirs:
 	mkdir -p $(DIR_OBJ)/ $(DIR_BIN)/
 
 soobnetter:	main.o splash.o address.o network.o prompt.o io.o args.o list.o parser.o
-	gcc $(FLAGS) -o $(DIR_BIN)/soobneter $(DIR_OBJ)/* -lm
+	gcc $(FLAGS) -o $(DIR_BIN)/soobnetter $(DIR_OBJ)/* -lm
 
 main.o:	main.c args.h list.h splash.h network.h io.h
 	gcc $(FLAGS) -c -o $(DIR_OBJ)/main.o $(DIR_SRC)/main.c
