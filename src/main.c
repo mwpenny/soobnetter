@@ -78,6 +78,7 @@ int main(int argc, char** argv)
 	/* Parse args if they are present */
 	if (argc > 1)
 	{
+		list_init(&argList);
 		args_enumerate(argc-1, argv+1, &argList);
 		success = apply_args(&argList, &subnet);
 		list_free(&argList);

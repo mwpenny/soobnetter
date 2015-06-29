@@ -20,9 +20,9 @@ void arg_copy_argv(Argument* arg, char** argv, int startIndex, int endIndex)
 
 void args_enumerate(int argc, char** argv, List* argList)
 {
+	/* Assumes argList is initialized by calling list_init() */
 	int i, lastArgIndex = 0;
 	Argument* currArg;
-	list_init(argList);
 
 	/* Store each command line argument in the arg list */
 	for (i = 0; i < argc; ++i)

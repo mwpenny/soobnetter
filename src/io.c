@@ -127,7 +127,8 @@ int io_apply_arg(Argument* arg, Network* netw, char* err)
 				addr_to_netaddr(&netw->addr, &n.addr);
 				n.nBits = netw->nBits;
 				parse_subnum(arg->argv[0], err, &n, &firstSub);
-				io_print_subnets(&n, firstSub, firstSub);
+				if (!strlen(err))
+					io_print_subnets(&n, firstSub, firstSub);
 			}
 		}
 	}
@@ -147,7 +148,8 @@ int io_apply_arg(Argument* arg, Network* netw, char* err)
 				n.nBits = netw->nBits;
 				parse_subnum(arg->argv[0], err, &n, &firstSub);
 				parse_subnum(arg->argv[1], err, &n, &lastSub);
-				io_print_subnets(&n, firstSub, lastSub);
+				if (!strlen(err))
+					io_print_subnets(&n, firstSub, lastSub);
 			}
 		}
 	}
